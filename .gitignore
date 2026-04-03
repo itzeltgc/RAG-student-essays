@@ -1,0 +1,13 @@
+# environment
+.venv/
+env/
+__pycache__/
+
+# API Keys
+.env
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
