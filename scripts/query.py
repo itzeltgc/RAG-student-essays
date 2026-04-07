@@ -52,6 +52,7 @@ Retroalimentación:"""
 
 
 
+
 if __name__ == "__main__":
     print("🎓 Essay Coach RAG - Ingresa tu ensayo:")
     with open("data/test/test_essay.txt", 'r', encoding='utf-8') as f:
