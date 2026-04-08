@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.runnables import RunnablePassthrough
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import tool
 import chromadb
@@ -63,22 +64,44 @@ Based on the following request, rewrite only the requested section. Make it comp
 
 
 tools = [give_feedback, analyze_structure, rewrite_section]
+llm_with_tools = llm.bind_tools(tools)
 
-prompt = ChatPromptTemplate.from_messages([
-    ('system', 'Your are an expert college admissions essay coach. Use the avilable tools to help students improve their essays.'),
-    ('human', '{input}'),
-    ('placeholder', '{agent_scratchpad}')
-])
-
-agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+def run_agent(user_input: str):
+    messages = [{"role": "user", "content": user_input}]
+    response = llm_with_tools.invoke(messages)
+    
+    if response.tool_calls:
+        tool_call = response.tool_calls[0]
+        tool_name = tool_call["name"]
+        tool_args = tool_call["args"]
+        print(f"\n🔧 Agent selected tool: {tool_name}\n")
+        
+        tool_map = {
+            "give_feedback": give_feedback,
+            "analyze_structure": analyze_structure,
+            "rewrite_section": rewrite_section
+        }
+        result = tool_map[tool_name].invoke(tool_args)
+        return result
+    else:
+        return response.content
 
 
 
 if __name__ == "__main__":
-    print("🎓 Essay Coach Agent — How can I help you today?")
-    print("(Paste your request, e.g. 'Analyze the structure of my essay: [your essay]')\n")
-    user_input = input("You: ")
-    result = agent_executor.invoke({"input": user_input})
+    with open("data/test/test_essay.txt", "r", encoding="utf-8") as f:
+        essay = f.read()
+
+    print("🎓 Essay Coach Agent")
+    print("Options:")
+    print("1. General feedback")
+    print("2. Analyze structure")
+    print("3. Rewrite a section (specify: intro/body/conclusion)")
+    print()
+    
+    user_choice = input("What would you like to do with your essay? ")
+    user_input = f"{user_choice} | essay: {essay}"
+    
+    result = run_agent(user_input)
     print("\n📝 Response:\n")
-    print(result["output"])
+    print(result)
