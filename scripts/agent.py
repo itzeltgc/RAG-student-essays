@@ -16,7 +16,6 @@ collection = client_chroma.get_collection("essays")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-
 def search_context(query: str) -> str:
     embedding = embedding_model.encode(query).tolist()
     results = collection.query(query_embeddings=[embedding], n_results=3)
